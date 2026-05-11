@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bread Calculator</title>
+  <style>
+    :root {
+      --bg: #f8f6f2;
+      --surface: #ffffff;
+      --border: #d8d0c4;
+      --text: #1a1a1a;
+      --muted: #6b6560;
+      --accent: #5c4a2a;
+      --accent-light: #f0e8d8;
+      --warning-bg: #fff4e0;
+      --warning-border: #e8a020;
+      --warning-text: #7a4800;
+      --danger: #c0392b;
+      --min-tap: 44px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 16px;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    main {
+      max-width: 500px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 20px;
+      text-align: center;
+      letter-spacing: 0.02em;
+    }
+
+    section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    h2 {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    /* Form fields */
+    .field {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      gap: 12px;
+    }
+
+    .field:last-child { margin-bottom: 0; }
+
+    label {
+      font-size: 0.95rem;
+      color: var(--text);
+      flex: 1;
+    }
+
+    input[type="number"],
+    input[type="text"] {
+      font-size: 1rem;
+      font-family: inherit;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 12px;
+      background: var(--bg);
+      color: var(--text);
+      width: 110px;
+      min-height: var(--min-tap);
+      text-align: right;
+      -moz-appearance: textfield;
+    }
+
+    input[type="number"]:focus,
+    input[type="text"]:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+    .unit {
+      font-size: 0.85rem;
+      color: var(--muted);
+      width: 24px;
+      text-align: left;
+    }
+
+    /* Flour bill */
+    .flour-row {
+      display: grid;
+      grid-template-columns: 1fr 80px 32px;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .flour-row input[type="text"] {
+      width: 100%;
+      text-align: left;
+    }
+
+    .flour-row input[type="number"] {
+      width: 100%;
+    }
+
+    .btn-remove {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 44px;
+      border: none;
+      background: none;
+      color: var(--danger);
+      font-size: 1.2rem;
+      cursor: pointer;
+      border-radius: 6px;
+      flex-shrink: 0;
+    }
+
+    .btn-remove:hover { background: #fdecea; }
+
+    .flour-row-header {
+      display: grid;
+      grid-template-columns: 1fr 80px 32px;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .flour-row-header span {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      padding: 0 12px;
+    }
+
+    #btn-add-flour {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 12px;
+      padding: 10px 16px;
+      background: var(--accent-light);
+      color: var(--accent);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      min-height: var(--min-tap);
+    }
+
+    #btn-add-flour:hover { background: #e8dcc8; }
+
+    #flour-warning {
+      display: none;
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: var(--warning-bg);
+      border: 1px solid var(--warning-border);
+      border-radius: 6px;
+      color: var(--warning-text);
+      font-size: 0.875rem;
+    }
+
+    /* Results */
+    #results.dimmed { opacity: 0.35; pointer-events: none; }
+
+    .result-group {
+      margin-bottom: 14px;
+    }
+
+    .result-group:last-child { margin-bottom: 0; }
+
+    .result-group h3 {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--muted);
+      margin-bottom: 8px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 5px 0;
+      font-size: 0.95rem;
+    }
+
+    .result-row .val {
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Flour bill results table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      margin-top: 4px;
+    }
+
+    th {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      text-align: left;
+      padding: 4px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th:not(:first-child) { text-align: right; }
+
+    td {
+      padding: 5px 0;
+      vertical-align: middle;
+    }
+
+    td:not(:first-child) {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    tfoot td {
+      font-weight: 700;
+      border-top: 1px solid var(--border);
+      padding-top: 7px;
+    }
+
+    /* Recipes */
+    #recipes-section details {
+      /* native collapsible */
+    }
+
+    summary {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 0;
+    }
+
+    summary::-webkit-details-marker { display: none; }
+
+    summary::before {
+      content: '▶';
+      font-size: 0.6rem;
+      transition: transform 0.15s;
+      display: inline-block;
+    }
+
+    details[open] summary::before { transform: rotate(90deg); }
+
+    details[open] summary { margin-bottom: 14px; }
+
+    #btn-save-recipe {
+      width: 100%;
+      padding: 12px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      min-height: var(--min-tap);
+      margin-bottom: 12px;
+    }
+
+    #btn-save-recipe:hover { background: #4a3820; }
+
+    #recipe-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .recipe-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+    }
+
+    .recipe-name {
+      flex: 1;
+      font-size: 0.95rem;
+      cursor: pointer;
+      min-height: var(--min-tap);
+      display: flex;
+      align-items: center;
+    }
+
+    .recipe-name:hover { color: var(--accent); }
+
+    .btn-delete-recipe {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 44px;
+      border: none;
+      background: none;
+      color: var(--danger);
+      font-size: 1rem;
+      cursor: pointer;
+      border-radius: 6px;
+      flex-shrink: 0;
+    }
+
+    .btn-delete-recipe:hover { background: #fdecea; }
+
+    #no-recipes {
+      color: var(--muted);
+      font-size: 0.875rem;
+      text-align: center;
+      padding: 12px 0;
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Bread Calculator</h1>
+
+  <form id="form" novalidate>
+
+    <!-- Parameters -->
+    <section>
+      <h2>Parameters</h2>
+
+      <div class="field">
+        <label for="num_loaves">Num Loaves</label>
+        <input type="number" id="num_loaves" value="2" min="1" step="1">
+        <span class="unit"></span>
+      </div>
+
+      <div class="field">
+        <label for="loaf_size">Loaf Size</label>
+        <input type="number" id="loaf_size" value="750" min="1" step="1">
+        <span class="unit">g</span>
+      </div>
+
+      <div class="field">
+        <label for="hydration">Hydration</label>
+        <input type="number" id="hydration" value="72" min="0" max="100" step="0.1">
+        <span class="unit">%</span>
+      </div>
+
+      <div class="field">
+        <label for="inoculation">Inoculation</label>
+        <input type="number" id="inoculation" value="15" min="0" max="100" step="0.1">
+        <span class="unit">%</span>
+      </div>
+
+      <div class="field">
+        <label for="salt">Salt</label>
+        <input type="number" id="salt" value="2" min="0" max="100" step="0.1">
+        <span class="unit">%</span>
+      </div>
+
+      <div class="field">
+        <label for="starter_hydration">Starter Hydration</label>
+        <input type="number" id="starter_hydration" value="50" min="0" max="100" step="0.1">
+        <span class="unit">%</span>
+      </div>
+    </section>
+
+    <!-- Flour Bill -->
+    <section>
+      <h2>Flour Bill</h2>
+
+      <div class="flour-row-header">
+        <span>Flour</span>
+        <span style="text-align:right">%</span>
+        <span></span>
+      </div>
+
+      <div id="flour-bill"></div>
+
+      <p id="flour-warning">Percentages must sum to 100%</p>
+
+      <button type="button" id="btn-add-flour">+ Add Flour</button>
+    </section>
+
+  </form>
+
+  <!-- Results -->
+  <section id="results">
+    <h2>Results</h2>
+
+    <div class="result-group">
+      <h3>Summary</h3>
+      <div class="result-row"><span>Batch Size (B)</span><span class="val"><span id="out_B">—</span> g</span></div>
+      <div class="result-row"><span>Total Flour (F)</span><span class="val"><span id="out_F">—</span> g</span></div>
+      <div class="result-row"><span>Total Water (W)</span><span class="val"><span id="out_W">—</span> g</span></div>
+      <div class="result-row"><span>Total Salt (S)</span><span class="val"><span id="out_S">—</span> g</span></div>
+    </div>
+
+    <div class="result-group">
+      <h3>Levain</h3>
+      <div class="result-row"><span>Prefermented Flour (Fp)</span><span class="val"><span id="out_Fp">—</span> g</span></div>
+      <div class="result-row"><span>Levain Water (Wl)</span><span class="val"><span id="out_Wl">—</span> g</span></div>
+      <div class="result-row"><span>Total Levain (L)</span><span class="val"><span id="out_L">—</span> g</span></div>
+    </div>
+
+    <div class="result-group">
+      <h3>Bench</h3>
+      <div class="result-row"><span>Batch Flour (Fb)</span><span class="val"><span id="out_Fb">—</span> g</span></div>
+      <div class="result-row"><span>Batch Water (Wb)</span><span class="val"><span id="out_Wb">—</span> g</span></div>
+    </div>
+
+    <div class="result-group">
+      <h3>Flour Bill</h3>
+      <table>
+        <thead>
+          <tr><th>Flour</th><th>%</th><th>Grams</th></tr>
+        </thead>
+        <tbody id="flour-bill-results"></tbody>
+        <tfoot>
+          <tr>
+            <td>Total</td>
+            <td id="out_flour_pct_total">—</td>
+            <td id="out_flour_g_total">—</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </section>
+
+  <!-- Recipes -->
+  <section id="recipes-section">
+    <details>
+      <summary>Recipes</summary>
+      <button type="button" id="btn-save-recipe">Save Current Recipe</button>
+      <div id="recipe-list"></div>
+    </details>
+  </section>
+
+</main>
+
+<!-- Flour row template -->
+<template id="flour-row-template">
+  <div class="flour-row">
+    <input type="text" placeholder="Flour name" autocomplete="off" autocorrect="off" spellcheck="false">
+    <input type="number" placeholder="100" min="0" max="100" step="0.1">
+    <button type="button" class="btn-remove" aria-label="Remove">✕</button>
+  </div>
+</template>
+
+<script>
+  const flourBillEl = document.getElementById('flour-bill');
+  const flourWarning = document.getElementById('flour-warning');
+  const resultsEl = document.getElementById('results');
+  const flourBillResults = document.getElementById('flour-bill-results');
+  const recipeList = document.getElementById('recipe-list');
+
+  function getInput(id) {
+    return document.getElementById(id).value;
+  }
+
+  function num(id) {
+    const v = parseFloat(getInput(id));
+    return isNaN(v) ? 0 : v;
+  }
+
+  function pct(id) {
+    return num(id) / 100;
+  }
+
+  function getFlourRows() {
+    return Array.from(flourBillEl.querySelectorAll('.flour-row')).map(row => {
+      const inputs = row.querySelectorAll('input');
+      const p = parseFloat(inputs[1].value);
+      return {
+        name: inputs[0].value || 'Flour',
+        pct: isNaN(p) ? 0 : p / 100,
+        pctRaw: isNaN(p) ? 0 : p,
+      };
+    });
+  }
+
+  function recalculate() {
+    const num_loaves = num('num_loaves');
+    const loaf_size  = num('loaf_size');
+    const hydration         = pct('hydration');
+    const inoculation       = pct('inoculation');
+    const salt              = pct('salt');
+    const starter_hydration = pct('starter_hydration');
+
+    const B  = num_loaves * loaf_size;
+    const F  = B / (1 + hydration + salt);
+    const W  = F * hydration;
+    const S  = F * salt;
+    const Fp = F * inoculation;
+    const Wl = Fp * starter_hydration;
+    const L  = Fp + Wl;
+    const Fb = F - Fp;
+    const Wb = W - Wl;
+
+    document.getElementById('out_B').textContent  = B.toFixed(1);
+    document.getElementById('out_F').textContent  = F.toFixed(1);
+    document.getElementById('out_W').textContent  = W.toFixed(1);
+    document.getElementById('out_S').textContent  = S.toFixed(1);
+    document.getElementById('out_Fp').textContent = Fp.toFixed(1);
+    document.getElementById('out_Wl').textContent = Wl.toFixed(1);
+    document.getElementById('out_L').textContent  = L.toFixed(1);
+    document.getElementById('out_Fb').textContent = Fb.toFixed(1);
+    document.getElementById('out_Wb').textContent = Wb.toFixed(1);
+
+    const flour_bill = getFlourRows();
+    const pctSum = flour_bill.reduce((acc, r) => acc + r.pct, 0);
+    const valid = Math.abs(pctSum - 1) < 0.0001;
+
+    flourWarning.style.display = valid ? 'none' : 'block';
+    resultsEl.classList.toggle('dimmed', !valid);
+
+    flourBillResults.innerHTML = '';
+    let gTotal = 0;
+    let pctTotal = 0;
+    flour_bill.forEach(r => {
+      const grams = r.pct * Fb;
+      gTotal  += grams;
+      pctTotal += r.pctRaw;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${r.name}</td><td>${r.pctRaw.toFixed(1)}</td><td>${grams.toFixed(1)}</td>`;
+      flourBillResults.appendChild(tr);
+    });
+
+    document.getElementById('out_flour_pct_total').textContent = pctTotal.toFixed(1);
+    document.getElementById('out_flour_g_total').textContent   = gTotal.toFixed(1);
+  }
+
+  function addFlourRow(name = '', pctVal = '') {
+    const tmpl = document.getElementById('flour-row-template');
+    const clone = tmpl.content.cloneNode(true);
+    const row = clone.querySelector('.flour-row');
+    const inputs = row.querySelectorAll('input');
+    inputs[0].value = name;
+    inputs[1].value = pctVal;
+    row.querySelector('.btn-remove').addEventListener('click', () => {
+      if (flourBillEl.querySelectorAll('.flour-row').length > 1) {
+        row.remove();
+        updateRemoveButtons();
+        recalculate();
+      }
+    });
+    flourBillEl.appendChild(row);
+    updateRemoveButtons();
+  }
+
+  function updateRemoveButtons() {
+    const rows = flourBillEl.querySelectorAll('.flour-row');
+    rows.forEach(row => {
+      row.querySelector('.btn-remove').style.visibility = rows.length > 1 ? 'visible' : 'hidden';
+    });
+  }
+
+  // --- localStorage ---
+
+  function getRecipes() {
+    try { return JSON.parse(localStorage.getItem('bread_recipes')) || []; }
+    catch { return []; }
+  }
+
+  function saveRecipes(arr) {
+    localStorage.setItem('bread_recipes', JSON.stringify(arr));
+  }
+
+  function currentState() {
+    return {
+      inputs: {
+        num_loaves:       getInput('num_loaves'),
+        loaf_size:        getInput('loaf_size'),
+        hydration:        getInput('hydration'),
+        inoculation:      getInput('inoculation'),
+        salt:             getInput('salt'),
+        starter_hydration: getInput('starter_hydration'),
+      },
+      flourBill: getFlourRows().map(r => ({ name: r.name, pct: r.pctRaw })),
+    };
+  }
+
+  function loadRecipe(recipe) {
+    const inp = recipe.inputs;
+    ['num_loaves','loaf_size','hydration','inoculation','salt','starter_hydration'].forEach(id => {
+      if (inp[id] !== undefined) document.getElementById(id).value = inp[id];
+    });
+    flourBillEl.innerHTML = '';
+    (recipe.flourBill || []).forEach(r => addFlourRow(r.name, r.pct));
+    if (flourBillEl.querySelectorAll('.flour-row').length === 0) addFlourRow('Flour', 100);
+    updateRemoveButtons();
+    recalculate();
+  }
+
+  function renderRecipes() {
+    const recipes = getRecipes();
+    recipeList.innerHTML = '';
+    if (recipes.length === 0) {
+      recipeList.innerHTML = '<p id="no-recipes">No saved recipes yet.</p>';
+      return;
+    }
+    recipes.forEach((recipe, i) => {
+      const item = document.createElement('div');
+      item.className = 'recipe-item';
+
+      const nameEl = document.createElement('span');
+      nameEl.className = 'recipe-name';
+      nameEl.textContent = recipe.name;
+      nameEl.addEventListener('click', () => loadRecipe(recipe));
+
+      const delBtn = document.createElement('button');
+      delBtn.className = 'btn-delete-recipe';
+      delBtn.setAttribute('aria-label', 'Delete');
+      delBtn.textContent = '✕';
+      delBtn.addEventListener('click', () => deleteRecipe(i));
+
+      item.appendChild(nameEl);
+      item.appendChild(delBtn);
+      recipeList.appendChild(item);
+    });
+  }
+
+  function deleteRecipe(index) {
+    const recipes = getRecipes();
+    recipes.splice(index, 1);
+    saveRecipes(recipes);
+    renderRecipes();
+  }
+
+  document.getElementById('btn-save-recipe').addEventListener('click', () => {
+    const name = prompt('Recipe name:');
+    if (!name || !name.trim()) return;
+    const recipes = getRecipes();
+    recipes.push({ name: name.trim(), ...currentState() });
+    saveRecipes(recipes);
+    renderRecipes();
+    document.querySelector('#recipes-section details').open = true;
+  });
+
+  document.getElementById('btn-add-flour').addEventListener('click', () => {
+    addFlourRow();
+    recalculate();
+  });
+
+  document.getElementById('form').addEventListener('input', recalculate);
+
+  // Init
+  addFlourRow('Flour', 100);
+  renderRecipes();
+  recalculate();
+</script>
+</body>
+</html>
