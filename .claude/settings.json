@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(make deploy *)",
+      "Bash(curl -sf -o /dev/null -w \"%{http_code}\" http://darkstar:8090/)"
+    ]
+  }
+}

@@ -1,6 +1,13 @@
 services:
   bread:
     build: .
-    ports:
-      - "8090:80"
+    expose:
+      - "80"
+    networks:
+      - proxy
     restart: unless-stopped
+
+networks:
+  proxy:
+    external: true
+    name: proxy

@@ -36,30 +36,12 @@
       padding: 16px;
     }
 
-    h1 {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--accent);
-      margin-bottom: 20px;
-      text-align: center;
-      letter-spacing: 0.02em;
-    }
-
     section {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 10px;
       padding: 16px;
       margin-bottom: 16px;
-    }
-
-    h2 {
-      font-size: 0.85rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--muted);
-      margin-bottom: 14px;
     }
 
     /* Form fields */
@@ -110,7 +92,7 @@
       text-align: left;
     }
 
-    /* Flour bill */
+    /* Flour bill inputs */
     .flour-row {
       display: grid;
       grid-template-columns: 1fr 80px 32px;
@@ -179,9 +161,95 @@
 
     #btn-add-flour:hover { background: #e8dcc8; }
 
+    /* Banner */
+    #banner {
+      background: var(--accent);
+      color: #fff;
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      user-select: none;
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+
+    .banner-sep {
+      color: rgba(255, 255, 255, 0.45);
+      font-weight: 400;
+    }
+
+    #banner-chevron {
+      margin-left: auto;
+      font-size: 0.7rem;
+      transition: transform 0.2s;
+      display: inline-block;
+      opacity: 0.75;
+    }
+
+    #banner.params-open #banner-chevron {
+      transform: rotate(180deg);
+    }
+
+    /* Collapsible sections */
+    section.collapsible-section {
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 16px;
+      cursor: pointer;
+      user-select: none;
+      min-height: var(--min-tap);
+    }
+
+    .section-header:hover { background: var(--accent-light); }
+
+    .section-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+
+    .section-chevron {
+      font-size: 0.6rem;
+      color: var(--muted);
+      transition: transform 0.2s;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+
+    .collapsible-section.open .section-chevron {
+      transform: rotate(90deg);
+    }
+
+    .section-body {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.25s ease;
+    }
+
+    .collapsible-section.open .section-body {
+      max-height: 2000px;
+    }
+
+    .section-inner {
+      padding: 0 16px 16px;
+    }
+
+    /* Flour warning — sits between header and body, visible even when collapsed */
     #flour-warning {
       display: none;
-      margin-top: 10px;
+      margin: 0 16px 10px;
       padding: 10px 12px;
       background: var(--warning-bg);
       border: 1px solid var(--warning-border);
@@ -190,26 +258,49 @@
       font-size: 0.875rem;
     }
 
-    /* Results */
-    #results.dimmed { opacity: 0.35; pointer-events: none; }
+    /* Primary results */
+    #primary-results.dimmed { opacity: 0.35; pointer-events: none; }
 
-    .result-group {
-      margin-bottom: 14px;
+    .primary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 8px 0;
     }
 
-    .result-group:last-child { margin-bottom: 0; }
-
-    .result-group h3 {
-      font-size: 0.75rem;
+    .primary-label {
+      font-size: 1.1rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.07em;
-      color: var(--muted);
-      margin-bottom: 8px;
-      padding-bottom: 4px;
-      border-bottom: 1px solid var(--border);
+      letter-spacing: 0.05em;
+      color: var(--text);
     }
 
+    .primary-label.flour-name {
+      font-weight: 400;
+      text-transform: none;
+      padding-left: 16px;
+    }
+
+    .primary-val {
+      font-size: 1.2rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .primary-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 6px 0;
+    }
+
+    .primary-total .primary-label,
+    .primary-total .primary-val {
+      font-size: 1.3rem;
+      font-weight: 800;
+    }
+
+    /* Details result rows */
     .result-row {
       display: flex;
       justify-content: space-between;
@@ -223,47 +314,7 @@
       font-variant-numeric: tabular-nums;
     }
 
-    /* Flour bill results table */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.9rem;
-      margin-top: 4px;
-    }
-
-    th {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--muted);
-      text-align: left;
-      padding: 4px 0;
-      border-bottom: 1px solid var(--border);
-    }
-
-    th:not(:first-child) { text-align: right; }
-
-    td {
-      padding: 5px 0;
-      vertical-align: middle;
-    }
-
-    td:not(:first-child) {
-      text-align: right;
-      font-variant-numeric: tabular-nums;
-    }
-
-    tfoot td {
-      font-weight: 700;
-      border-top: 1px solid var(--border);
-      padding-top: 7px;
-    }
-
     /* Recipes */
-    #recipes-section details {
-      /* native collapsible */
-    }
-
     summary {
       font-size: 0.85rem;
       font-weight: 700;
@@ -362,110 +413,119 @@
 </head>
 <body>
 <main>
-  <h1>Bread Calculator</h1>
+
+  <!-- Summary Banner — always visible, tapping toggles Parameters -->
+  <div id="banner">
+    <span id="banner-loaves">2 × 750g</span>
+    <span class="banner-sep">|</span>
+    <span id="banner-total">1500g</span>
+    <span class="banner-sep">|</span>
+    <span id="banner-hydration">72%</span>
+    <span id="banner-chevron">▼</span>
+  </div>
 
   <form id="form" novalidate>
 
-    <!-- Parameters -->
-    <section>
-      <h2>Parameters</h2>
-
-      <div class="field">
-        <label for="num_loaves">Num Loaves</label>
-        <input type="number" id="num_loaves" value="2" min="1" step="1">
-        <span class="unit"></span>
+    <!-- Parameters (collapsible, closed by default) -->
+    <section class="collapsible-section" id="params-section">
+      <div class="section-header" id="params-toggle">
+        <span class="section-chevron">▶</span>
+        <span class="section-title">Parameters</span>
       </div>
-
-      <div class="field">
-        <label for="loaf_size">Loaf Size</label>
-        <input type="number" id="loaf_size" value="750" min="1" step="1">
-        <span class="unit">g</span>
-      </div>
-
-      <div class="field">
-        <label for="hydration">Hydration</label>
-        <input type="number" id="hydration" value="72" min="0" max="100" step="0.1">
-        <span class="unit">%</span>
-      </div>
-
-      <div class="field">
-        <label for="inoculation">Inoculation</label>
-        <input type="number" id="inoculation" value="15" min="0" max="100" step="0.1">
-        <span class="unit">%</span>
-      </div>
-
-      <div class="field">
-        <label for="salt">Salt</label>
-        <input type="number" id="salt" value="2" min="0" max="100" step="0.1">
-        <span class="unit">%</span>
-      </div>
-
-      <div class="field">
-        <label for="starter_hydration">Starter Hydration</label>
-        <input type="number" id="starter_hydration" value="50" min="0" max="100" step="0.1">
-        <span class="unit">%</span>
+      <div class="section-body">
+        <div class="section-inner">
+          <div class="field">
+            <label for="num_loaves">Num Loaves</label>
+            <input type="number" id="num_loaves" value="2" min="1" step="1">
+            <span class="unit"></span>
+          </div>
+          <div class="field">
+            <label for="loaf_size">Loaf Size</label>
+            <input type="number" id="loaf_size" value="750" min="1" step="1">
+            <span class="unit">g</span>
+          </div>
+          <div class="field">
+            <label for="hydration">Hydration</label>
+            <input type="number" id="hydration" value="72" min="0" max="100" step="0.1">
+            <span class="unit">%</span>
+          </div>
+          <div class="field">
+            <label for="inoculation">Inoculation</label>
+            <input type="number" id="inoculation" value="15" min="0" max="100" step="0.1">
+            <span class="unit">%</span>
+          </div>
+          <div class="field">
+            <label for="salt">Salt</label>
+            <input type="number" id="salt" value="2" min="0" max="100" step="0.1">
+            <span class="unit">%</span>
+          </div>
+          <div class="field">
+            <label for="starter_hydration">Starter Hydration</label>
+            <input type="number" id="starter_hydration" value="50" min="0" max="100" step="0.1">
+            <span class="unit">%</span>
+          </div>
+        </div>
       </div>
     </section>
 
-    <!-- Flour Bill -->
-    <section>
-      <h2>Flour Bill</h2>
-
-      <div class="flour-row-header">
-        <span>Flour</span>
-        <span style="text-align:right">%</span>
-        <span></span>
+    <!-- Flour Bill (collapsible, closed by default) -->
+    <section class="collapsible-section" id="flour-section">
+      <div class="section-header" id="flour-toggle">
+        <span class="section-chevron">▶</span>
+        <span class="section-title">Flour Bill</span>
       </div>
-
-      <div id="flour-bill"></div>
-
       <p id="flour-warning">Percentages must sum to 100%</p>
-
-      <button type="button" id="btn-add-flour">+ Add Flour</button>
+      <div class="section-body">
+        <div class="section-inner">
+          <div class="flour-row-header">
+            <span>Flour</span>
+            <span style="text-align:right">%</span>
+            <span></span>
+          </div>
+          <div id="flour-bill"></div>
+          <button type="button" id="btn-add-flour">+ Add Flour</button>
+        </div>
+      </div>
     </section>
 
   </form>
 
-  <!-- Results -->
-  <section id="results">
-    <h2>Results</h2>
-
-    <div class="result-group">
-      <h3>Summary</h3>
-      <div class="result-row"><span>Batch Size (B)</span><span class="val"><span id="out_B">—</span> g</span></div>
-      <div class="result-row"><span>Total Flour (F)</span><span class="val"><span id="out_F">—</span> g</span></div>
-      <div class="result-row"><span>Total Water (W)</span><span class="val"><span id="out_W">—</span> g</span></div>
-      <div class="result-row"><span>Total Salt (S)</span><span class="val"><span id="out_S">—</span> g</span></div>
+  <!-- Primary Results — always visible -->
+  <section id="primary-results">
+    <div class="primary-row">
+      <span class="primary-label">LEVAIN</span>
+      <span class="primary-val"><span id="out_L">—</span> g</span>
     </div>
-
-    <div class="result-group">
-      <h3>Levain</h3>
-      <div class="result-row"><span>Prefermented Flour (Fp)</span><span class="val"><span id="out_Fp">—</span> g</span></div>
-      <div class="result-row"><span>Levain Water (Wl)</span><span class="val"><span id="out_Wl">—</span> g</span></div>
-      <div class="result-row"><span>Total Levain (L)</span><span class="val"><span id="out_L">—</span> g</span></div>
+    <div class="primary-row">
+      <span class="primary-label">WATER</span>
+      <span class="primary-val"><span id="out_Wb">—</span> g</span>
     </div>
-
-    <div class="result-group">
-      <h3>Bench</h3>
-      <div class="result-row"><span>Batch Flour (Fb)</span><span class="val"><span id="out_Fb">—</span> g</span></div>
-      <div class="result-row"><span>Batch Water (Wb)</span><span class="val"><span id="out_Wb">—</span> g</span></div>
+    <div id="primary-flour-rows"></div>
+    <div class="primary-row">
+      <span class="primary-label">SALT</span>
+      <span class="primary-val"><span id="out_S">—</span> g</span>
     </div>
+    <hr class="primary-divider">
+    <div class="primary-row primary-total">
+      <span class="primary-label">TOTAL</span>
+      <span class="primary-val"><span id="out_B">—</span> g</span>
+    </div>
+  </section>
 
-    <div class="result-group">
-      <h3>Flour Bill</h3>
-      <table>
-        <thead>
-          <tr><th>Flour</th><th>%</th><th>Grams</th></tr>
-        </thead>
-        <tbody id="flour-bill-results"></tbody>
-        <tfoot>
-          <tr>
-            <td>Total</td>
-            <td id="out_flour_pct_total">—</td>
-            <td id="out_flour_g_total">—</td>
-          </tr>
-        </tfoot>
-      </table>
+  <!-- Details (collapsible, closed by default) -->
+  <section class="collapsible-section" id="details-section">
+    <div class="section-header" id="details-toggle">
+      <span class="section-chevron">▶</span>
+      <span class="section-title">Details</span>
+    </div>
+    <div class="section-body">
+      <div class="section-inner">
+        <div class="result-row"><span>Total Flour (F)</span><span class="val"><span id="out_F">—</span> g</span></div>
+        <div class="result-row"><span>Total Water (W)</span><span class="val"><span id="out_W">—</span> g</span></div>
+        <div class="result-row"><span>Prefermented Flour (Fp)</span><span class="val"><span id="out_Fp">—</span> g</span></div>
+        <div class="result-row"><span>Levain Water (Wl)</span><span class="val"><span id="out_Wl">—</span> g</span></div>
+        <div class="result-row"><span>Batch Flour (Fb)</span><span class="val"><span id="out_Fb">—</span> g</span></div>
+      </div>
     </div>
   </section>
 
@@ -492,8 +552,8 @@
 <script>
   const flourBillEl = document.getElementById('flour-bill');
   const flourWarning = document.getElementById('flour-warning');
-  const resultsEl = document.getElementById('results');
-  const flourBillResults = document.getElementById('flour-bill-results');
+  const primaryResultsEl = document.getElementById('primary-results');
+  const primaryFlourRows = document.getElementById('primary-flour-rows');
   const recipeList = document.getElementById('recipe-list');
 
   function getInput(id) {
@@ -539,37 +599,40 @@
     const Fb = F - Fp;
     const Wb = W - Wl;
 
+    // Banner
+    document.getElementById('banner-loaves').textContent = `${num_loaves} × ${loaf_size}g`;
+    document.getElementById('banner-total').textContent  = `${B.toFixed(0)}g`;
+    document.getElementById('banner-hydration').textContent = `${num('hydration')}%`;
+
+    // Primary results
+    document.getElementById('out_L').textContent  = L.toFixed(1);
+    document.getElementById('out_Wb').textContent = Wb.toFixed(1);
+    document.getElementById('out_S').textContent  = S.toFixed(1);
     document.getElementById('out_B').textContent  = B.toFixed(1);
+
+    // Details
     document.getElementById('out_F').textContent  = F.toFixed(1);
     document.getElementById('out_W').textContent  = W.toFixed(1);
-    document.getElementById('out_S').textContent  = S.toFixed(1);
     document.getElementById('out_Fp').textContent = Fp.toFixed(1);
     document.getElementById('out_Wl').textContent = Wl.toFixed(1);
-    document.getElementById('out_L').textContent  = L.toFixed(1);
     document.getElementById('out_Fb').textContent = Fb.toFixed(1);
-    document.getElementById('out_Wb').textContent = Wb.toFixed(1);
 
+    // Flour bill
     const flour_bill = getFlourRows();
     const pctSum = flour_bill.reduce((acc, r) => acc + r.pct, 0);
     const valid = Math.abs(pctSum - 1) < 0.0001;
 
     flourWarning.style.display = valid ? 'none' : 'block';
-    resultsEl.classList.toggle('dimmed', !valid);
+    primaryResultsEl.classList.toggle('dimmed', !valid);
 
-    flourBillResults.innerHTML = '';
-    let gTotal = 0;
-    let pctTotal = 0;
+    primaryFlourRows.innerHTML = '';
     flour_bill.forEach(r => {
       const grams = r.pct * Fb;
-      gTotal  += grams;
-      pctTotal += r.pctRaw;
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${r.name}</td><td>${r.pctRaw.toFixed(1)}</td><td>${grams.toFixed(1)}</td>`;
-      flourBillResults.appendChild(tr);
+      const div = document.createElement('div');
+      div.className = 'primary-row';
+      div.innerHTML = `<span class="primary-label flour-name">${r.name}</span><span class="primary-val">${grams.toFixed(1)} g</span>`;
+      primaryFlourRows.appendChild(div);
     });
-
-    document.getElementById('out_flour_pct_total').textContent = pctTotal.toFixed(1);
-    document.getElementById('out_flour_g_total').textContent   = gTotal.toFixed(1);
   }
 
   function addFlourRow(name = '', pctVal = '') {
@@ -597,6 +660,24 @@
     });
   }
 
+  // Toggle helpers
+  function toggleParams() {
+    const paramsSection = document.getElementById('params-section');
+    const isOpen = paramsSection.classList.toggle('open');
+    document.getElementById('banner').classList.toggle('params-open', isOpen);
+  }
+
+  document.getElementById('banner').addEventListener('click', toggleParams);
+  document.getElementById('params-toggle').addEventListener('click', toggleParams);
+
+  document.getElementById('flour-toggle').addEventListener('click', () => {
+    document.getElementById('flour-section').classList.toggle('open');
+  });
+
+  document.getElementById('details-toggle').addEventListener('click', () => {
+    document.getElementById('details-section').classList.toggle('open');
+  });
+
   // --- localStorage ---
 
   function getRecipes() {
@@ -611,11 +692,11 @@
   function currentState() {
     return {
       inputs: {
-        num_loaves:       getInput('num_loaves'),
-        loaf_size:        getInput('loaf_size'),
-        hydration:        getInput('hydration'),
-        inoculation:      getInput('inoculation'),
-        salt:             getInput('salt'),
+        num_loaves:        getInput('num_loaves'),
+        loaf_size:         getInput('loaf_size'),
+        hydration:         getInput('hydration'),
+        inoculation:       getInput('inoculation'),
+        salt:              getInput('salt'),
         starter_hydration: getInput('starter_hydration'),
       },
       flourBill: getFlourRows().map(r => ({ name: r.name, pct: r.pctRaw })),
