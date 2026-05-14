@@ -314,6 +314,15 @@
       font-variant-numeric: tabular-nums;
     }
 
+    .result-row .bp {
+      font-size: 0.875rem;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+      min-width: 58px;
+      text-align: right;
+      margin-right: 10px;
+    }
+
     /* Recipes */
     summary {
       font-size: 0.85rem;
@@ -421,6 +430,8 @@
     <span id="banner-total">1500g</span>
     <span class="banner-sep">|</span>
     <span id="banner-hydration">72%</span>
+    <span class="banner-sep">|</span>
+    <span id="banner-loss">5% loss</span>
     <span id="banner-chevron">▼</span>
   </div>
 
@@ -443,6 +454,11 @@
             <label for="loaf_size">Loaf Size</label>
             <input type="number" id="loaf_size" value="750" min="1" step="1">
             <span class="unit">g</span>
+          </div>
+          <div class="field">
+            <label for="batch_loss">Batch Loss</label>
+            <input type="number" id="batch_loss" value="5" min="0" max="100" step="0.1">
+            <span class="unit">%</span>
           </div>
           <div class="field">
             <label for="hydration">Hydration</label>
@@ -507,8 +523,12 @@
     </div>
     <hr class="primary-divider">
     <div class="primary-row primary-total">
-      <span class="primary-label">TOTAL</span>
-      <span class="primary-val"><span id="out_B">—</span> g</span>
+      <span class="primary-label">TOTAL (scaled)</span>
+      <span class="primary-val"><span id="out_B_scaled">—</span> g</span>
+    </div>
+    <div class="primary-row">
+      <span class="primary-label" style="font-size:1rem;font-weight:600">TOTAL (target)</span>
+      <span class="primary-val" style="font-size:1rem;font-weight:600"><span id="out_B_target">—</span> g</span>
     </div>
   </section>
 
@@ -520,11 +540,11 @@
     </div>
     <div class="section-body">
       <div class="section-inner">
-        <div class="result-row"><span>Total Flour (F)</span><span class="val"><span id="out_F">—</span> g</span></div>
-        <div class="result-row"><span>Total Water (W)</span><span class="val"><span id="out_W">—</span> g</span></div>
-        <div class="result-row"><span>Prefermented Flour (Fp)</span><span class="val"><span id="out_Fp">—</span> g</span></div>
-        <div class="result-row"><span>Levain Water (Wl)</span><span class="val"><span id="out_Wl">—</span> g</span></div>
-        <div class="result-row"><span>Batch Flour (Fb)</span><span class="val"><span id="out_Fb">—</span> g</span></div>
+        <div class="result-row"><span>Total Flour (F)</span><span class="bp"><span id="out_F_bp">—</span></span><span class="val"><span id="out_F">—</span> g</span></div>
+        <div class="result-row"><span>Total Water (W)</span><span class="bp"><span id="out_W_bp">—</span></span><span class="val"><span id="out_W">—</span> g</span></div>
+        <div class="result-row"><span>Prefermented Flour (Fp)</span><span class="bp"><span id="out_Fp_bp">—</span></span><span class="val"><span id="out_Fp">—</span> g</span></div>
+        <div class="result-row"><span>Levain Water (Wl)</span><span class="bp"><span id="out_Wl_bp">—</span></span><span class="val"><span id="out_Wl">—</span> g</span></div>
+        <div class="result-row"><span>Batch Flour (Fb)</span><span class="bp"><span id="out_Fb_bp">—</span></span><span class="val"><span id="out_Fb">—</span> g</span></div>
       </div>
     </div>
   </section>
@@ -589,8 +609,10 @@
     const salt              = pct('salt');
     const starter_hydration = pct('starter_hydration');
 
-    const B  = num_loaves * loaf_size;
-    const F  = B / (1 + hydration + salt);
+    const loss     = pct('batch_loss');
+    const B_target = num_loaves * loaf_size;
+    const B_scaled = B_target / (1 - loss);
+    const F  = B_scaled / (1 + hydration + salt);
     const W  = F * hydration;
     const S  = F * salt;
     const Fp = F * inoculation;
@@ -600,22 +622,32 @@
     const Wb = W - Wl;
 
     // Banner
-    document.getElementById('banner-loaves').textContent = `${num_loaves} × ${loaf_size}g`;
-    document.getElementById('banner-total').textContent  = `${B.toFixed(0)}g`;
+    document.getElementById('banner-loaves').textContent    = `${num_loaves} × ${loaf_size}g`;
+    document.getElementById('banner-total').textContent     = `${B_target.toFixed(0)}g`;
     document.getElementById('banner-hydration').textContent = `${num('hydration')}%`;
+    document.getElementById('banner-loss').textContent      = `${num('batch_loss')}% loss`;
 
     // Primary results
-    document.getElementById('out_L').textContent  = L.toFixed(1);
-    document.getElementById('out_Wb').textContent = Wb.toFixed(1);
-    document.getElementById('out_S').textContent  = S.toFixed(1);
-    document.getElementById('out_B').textContent  = B.toFixed(1);
+    document.getElementById('out_L').textContent        = Math.round(L);
+    document.getElementById('out_Wb').textContent       = Math.round(Wb);
+    document.getElementById('out_S').textContent        = Math.round(S);
+    document.getElementById('out_B_scaled').textContent = Math.round(B_scaled);
+    document.getElementById('out_B_target').textContent = Math.round(B_target);
 
-    // Details
-    document.getElementById('out_F').textContent  = F.toFixed(1);
-    document.getElementById('out_W').textContent  = W.toFixed(1);
-    document.getElementById('out_Fp').textContent = Fp.toFixed(1);
-    document.getElementById('out_Wl').textContent = Wl.toFixed(1);
-    document.getElementById('out_Fb').textContent = Fb.toFixed(1);
+    // Details — grams
+    document.getElementById('out_F').textContent  = Math.round(F);
+    document.getElementById('out_W').textContent  = Math.round(W);
+    document.getElementById('out_Fp').textContent = Math.round(Fp);
+    document.getElementById('out_Wl').textContent = Math.round(Wl);
+    document.getElementById('out_Fb').textContent = Math.round(Fb);
+
+    // Details — baker's percentages (relative to total flour)
+    const bp = v => F > 0 ? ((v / F) * 100).toFixed(1) + '%' : '—';
+    document.getElementById('out_F_bp').textContent  = F > 0 ? '100%' : '—';
+    document.getElementById('out_W_bp').textContent  = bp(W);
+    document.getElementById('out_Fp_bp').textContent = bp(Fp);
+    document.getElementById('out_Wl_bp').textContent = bp(Wl);
+    document.getElementById('out_Fb_bp').textContent = bp(Fb);
 
     // Flour bill
     const flour_bill = getFlourRows();
@@ -630,7 +662,7 @@
       const grams = r.pct * Fb;
       const div = document.createElement('div');
       div.className = 'primary-row';
-      div.innerHTML = `<span class="primary-label flour-name">${r.name}</span><span class="primary-val">${grams.toFixed(1)} g</span>`;
+      div.innerHTML = `<span class="primary-label flour-name">${r.name}</span><span class="primary-val">${Math.round(grams)} g</span>`;
       primaryFlourRows.appendChild(div);
     });
   }
@@ -694,6 +726,7 @@
       inputs: {
         num_loaves:        getInput('num_loaves'),
         loaf_size:         getInput('loaf_size'),
+        batch_loss:        getInput('batch_loss'),
         hydration:         getInput('hydration'),
         inoculation:       getInput('inoculation'),
         salt:              getInput('salt'),
@@ -705,7 +738,7 @@
 
   function loadRecipe(recipe) {
     const inp = recipe.inputs;
-    ['num_loaves','loaf_size','hydration','inoculation','salt','starter_hydration'].forEach(id => {
+    ['num_loaves','loaf_size','batch_loss','hydration','inoculation','salt','starter_hydration'].forEach(id => {
       if (inp[id] !== undefined) document.getElementById(id).value = inp[id];
     });
     flourBillEl.innerHTML = '';

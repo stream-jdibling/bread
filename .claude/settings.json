@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(make deploy *)",
-      "Bash(curl -sf -o /dev/null -w \"%{http_code}\" http://darkstar:8090/)"
+      "Bash(curl -sf -o /dev/null -w \"%{http_code}\" http://darkstar:8090/)",
+      "Bash(grep -E '\\\\.\\(jsx?|tsx?|vue|svelte|html\\)$')"
     ]
   }
 }
