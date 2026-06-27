@@ -418,6 +418,117 @@
       text-align: center;
       padding: 12px 0;
     }
+
+    /* Water Temperature card — visually distinct */
+    .wt-section {
+      border-color: #b8c4cc;
+    }
+
+    .wt-section .section-header {
+      background: #eef2f5;
+      border-radius: 9px;
+    }
+
+    .wt-section.open .section-header {
+      border-radius: 9px 9px 0 0;
+    }
+
+    .wt-section .section-header:hover {
+      background: #e0e8ee;
+    }
+
+    .wt-section .section-title {
+      color: #3a5a6a;
+    }
+
+    .wt-section .section-chevron {
+      color: #3a5a6a;
+    }
+
+    /* Segmented control */
+    .seg-control {
+      display: flex;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      width: 100%;
+    }
+
+    .seg-btn {
+      flex: 1;
+      padding: 8px 12px;
+      border: none;
+      border-right: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 0.9rem;
+      font-family: inherit;
+      cursor: pointer;
+      min-height: var(--min-tap);
+    }
+
+    .seg-btn:last-child { border-right: none; }
+
+    .seg-btn.active {
+      background: var(--accent);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .seg-btn:hover:not(.active) { background: var(--accent-light); }
+
+    .wt-friction {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .wt-reset-link {
+      font-size: 0.8rem;
+      color: var(--accent);
+      text-decoration: none;
+      margin-left: 6px;
+      display: none;
+    }
+
+    .wt-reset-link:hover { text-decoration: underline; }
+
+    .wt-result {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 12px 0 4px;
+      border-top: 1px solid var(--border);
+      margin-top: 16px;
+    }
+
+    .wt-result-label {
+      font-size: 1.1rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .wt-result-value {
+      font-size: 1.3rem;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .wt-warning {
+      margin-top: 8px;
+      padding: 10px 12px;
+      background: var(--warning-bg);
+      border: 1px solid var(--warning-border);
+      border-radius: 6px;
+      color: var(--warning-text);
+      font-size: 0.875rem;
+    }
+
+    .wt-method-field {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
   </style>
 </head>
 <body>
@@ -556,6 +667,52 @@
       <button type="button" id="btn-save-recipe">Save Current Recipe</button>
       <div id="recipe-list"></div>
     </details>
+  </section>
+
+  <!-- Water Temperature Calculator (collapsible, closed by default) -->
+  <section class="collapsible-section wt-section" id="water-temp-section">
+    <div class="section-header" id="water-temp-toggle">
+      <span class="section-chevron">▶</span>
+      <span class="section-title">Water Temperature</span>
+    </div>
+    <div class="section-body">
+      <div class="section-inner">
+        <div class="field">
+          <label for="wt-ddt">DDT</label>
+          <input type="number" id="wt-ddt" value="78" step="0.1">
+          <span class="unit">°F</span>
+        </div>
+        <div class="field">
+          <label for="wt-flour">Flour Temp</label>
+          <input type="number" id="wt-flour" placeholder="—" step="0.1">
+          <span class="unit">°F</span>
+        </div>
+        <div class="field">
+          <label for="wt-ambient">Ambient Temp</label>
+          <input type="number" id="wt-ambient" placeholder="—" step="0.1">
+          <span class="unit">°F</span>
+        </div>
+        <div class="field">
+          <label for="wt-levain">Levain Temp <a class="wt-reset-link" id="wt-levain-reset" href="#">↺ use ambient</a></label>
+          <input type="number" id="wt-levain" placeholder="—" step="0.1">
+          <span class="unit">°F</span>
+        </div>
+        <div class="field wt-method-field">
+          <label>Mixing Method</label>
+          <div class="seg-control" id="wt-method">
+            <button type="button" class="seg-btn active" data-method="Hand">Hand</button>
+            <button type="button" class="seg-btn" data-method="Orbital">Orbital</button>
+            <button type="button" class="seg-btn" data-method="Spiral">Spiral</button>
+          </div>
+          <p class="wt-friction">Friction factor: <span id="wt-friction-val">0</span>°F</p>
+        </div>
+        <div class="wt-result">
+          <span class="wt-result-label">Water Temp</span>
+          <span class="wt-result-value" id="wt-result-val">—</span>
+        </div>
+        <div class="wt-warning" id="wt-warning" style="display:none">Check your inputs — result out of range.</div>
+      </div>
+    </div>
   </section>
 
 </main>
@@ -804,6 +961,81 @@
   addFlourRow('Flour', 100);
   renderRecipes();
   recalculate();
+
+  // Water Temperature Calculator
+  (function () {
+    const FRICTION = { Hand: 0, Orbital: 27, Spiral: 18 };
+    let mixingMethod = 'Hand';
+    let levainManuallyEdited = false;
+
+    const ambientEl    = document.getElementById('wt-ambient');
+    const levainEl     = document.getElementById('wt-levain');
+    const resetLink    = document.getElementById('wt-levain-reset');
+    const frictionValEl = document.getElementById('wt-friction-val');
+    const resultValEl  = document.getElementById('wt-result-val');
+    const warningEl    = document.getElementById('wt-warning');
+
+    function wtNum(id) {
+      const v = parseFloat(document.getElementById(id).value);
+      return isNaN(v) ? null : v;
+    }
+
+    function recalcWaterTemp() {
+      const ddt     = wtNum('wt-ddt');
+      const flour   = wtNum('wt-flour');
+      const ambient = wtNum('wt-ambient');
+      const levain  = wtNum('wt-levain');
+      const friction = FRICTION[mixingMethod];
+
+      frictionValEl.textContent = friction;
+
+      if (ddt === null || flour === null || ambient === null || levain === null) {
+        resultValEl.textContent = '—';
+        warningEl.style.display = 'none';
+        return;
+      }
+
+      const waterTemp = (ddt * 4) - flour - ambient - levain - friction;
+      resultValEl.textContent = waterTemp.toFixed(1) + '°F';
+      warningEl.style.display = (waterTemp < 32 || waterTemp > 110) ? 'block' : 'none';
+    }
+
+    ambientEl.addEventListener('input', () => {
+      if (!levainManuallyEdited) levainEl.value = ambientEl.value;
+      recalcWaterTemp();
+    });
+
+    levainEl.addEventListener('input', () => {
+      levainManuallyEdited = true;
+      resetLink.style.display = 'inline';
+      recalcWaterTemp();
+    });
+
+    resetLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      levainManuallyEdited = false;
+      levainEl.value = ambientEl.value;
+      resetLink.style.display = 'none';
+      recalcWaterTemp();
+    });
+
+    document.getElementById('wt-ddt').addEventListener('input', recalcWaterTemp);
+    document.getElementById('wt-flour').addEventListener('input', recalcWaterTemp);
+
+    document.getElementById('wt-method').addEventListener('click', (e) => {
+      const btn = e.target.closest('.seg-btn');
+      if (!btn) return;
+      mixingMethod = btn.dataset.method;
+      document.querySelectorAll('#wt-method .seg-btn').forEach(b => b.classList.toggle('active', b === btn));
+      recalcWaterTemp();
+    });
+
+    document.getElementById('water-temp-toggle').addEventListener('click', () => {
+      document.getElementById('water-temp-section').classList.toggle('open');
+    });
+
+    recalcWaterTemp();
+  }());
 </script>
 </body>
 </html>

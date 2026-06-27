@@ -4,10 +4,9 @@ services:
     expose:
       - "80"
     networks:
-      - proxy
+      - edge
     restart: unless-stopped
 
 networks:
-  proxy:
+  edge:
     external: true
-    name: proxy

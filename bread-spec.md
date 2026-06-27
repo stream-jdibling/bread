@@ -1,69 +1,72 @@
-# Bread Calculator — Batch Loss Factor Spec
+# Bread Calculator — Water Temperature Tool Spec
 
 ## Context
 
-The calculator is live at https://bread.aldenkitchen.com. This spec adds a loss factor input that inflates the scaled batch size so the final yield hits the target loaf weights. No other behavior changes.
+The calculator is live at https://bread.aldenkitchen.com. This spec adds a collapsible Water Temperature calculator as a separate tool on the same page, below the batch calculator. No changes to existing functionality.
 
 ## Decisions Already Made
 
-- Loss factor applies to **total batch**, not per-loaf
-- Default: 5%
-- Target batch size (what you want) and scaled batch size (what you mix) are both displayed
-- All downstream math (F, W, S, Fp, etc.) flows from `B_scaled`, not `B_target`
+- Separate collapsible card, visually distinct from the batch calculator
+- Four-variable DDT formula (flour, ambient, levain, water)
+- Levain temp defaults to ambient temp — updates automatically when ambient changes unless the user has manually edited levain temp
+- Friction factors hardcoded by mixing method: Hand = 0°F, Orbital = 27°F, Spiral = 18°F
+- Units: °F throughout
+- Collapsed by default
 
 ## Before Writing Any Code
 
 1. Read the existing `index.html` fully
-2. Explain which inputs, math, and output elements change
+2. Explain where the new card is inserted in the DOM, how the levain-defaults-to-ambient behavior is implemented, and how the mixing method selector works
 3. Wait for confirmation before writing anything
 
-## Math Change
+## Math
 
 ```
-B_target = num_loaves × loaf_size          // unchanged — what you want to end up with
-B_scaled = B_target / (1 - loss)           // new — what you actually mix
+Water Temp = (DDT × 4) - Flour Temp - Ambient Temp - Levain Temp - Friction Factor
 ```
 
-Replace all downstream uses of `B` with `B_scaled`. `B_target` is display-only.
+Friction factors:
+- Hand mixing: 0
+- Orbital mixer: 27
+- Spiral mixer: 18
 
-Full updated formula set:
-```
-B_target = num_loaves × loaf_size
-B_scaled = B_target / (1 - loss)
-F  = B_scaled / (1 + hydration + salt)
-W  = F × hydration
-S  = F × salt
-Fp = F × inoculation
-Wl = Fp × starter_hydration
-L  = Fp + Wl
-Fb = F − Fp
-Wb = W − Wl
-flour_bill[i].grams = flour_bill[i].pct × Fb
-```
+## Inputs
 
-## Input Change
-
-Add one field to the Parameters section:
-
-| Field | Default | Type |
+| Field | Default | Notes |
 |---|---|---|
-| Batch Loss | 5% | 0–100, decimal internally |
+| DDT (°F) | 78 | Desired dough temperature |
+| Flour Temp (°F) | — | No default, required |
+| Ambient Temp (°F) | — | No default, required |
+| Levain Temp (°F) | — | Defaults to Ambient Temp value; user can override |
+| Mixing Method | Hand | Segmented control: Hand / Orbital / Spiral |
 
-Position it after Loaf Size, before Hydration — it's conceptually part of the yield parameters.
+Levain Temp behavior: on every Ambient Temp change, if Levain Temp has not been manually edited, update Levain Temp to match. Once the user edits Levain Temp directly, stop syncing. Provide a small reset link ("↺ use ambient") to re-sync.
 
-## Output Changes
+## Output
 
-Summary banner: add loss % to the existing fields.
+Single prominent result:
 
-Primary results card — update the TOTAL row:
-- **TOTAL (scaled)**: B_scaled — this is what you mix
-- **TOTAL (target)**: B_target — this is what you expect to yield
+```
+Water Temp: 68.0°F
+```
 
-All other output rows remain the same, now correctly derived from B_scaled.
+If result is below 32°F or above 110°F, show a warning: "Check your inputs — result out of range."
+
+Recalculate on every input change. No calculate button.
+
+## UI
+
+- Collapsible card, collapsed by default, positioned below the Recipes section
+- Card header: "Water Temperature" with a chevron toggle
+- Visually distinct from the batch calculator — different header style or subtle background difference to make clear it's a separate tool
+- Mixing method: three-button segmented control (Hand | Orbital | Spiral), not a dropdown
+- Show the assumed friction factor below the selector: e.g. "Friction factor: 27°F"
+- Result displayed at the same scale as batch results — large, readable
 
 ## Deploy & Verify
 
 1. Run `make deploy`
 2. Verify at https://bread.aldenkitchen.com
-3. Sanity check: 3 loaves × 800g, 5% loss → B_target = 2400g, B_scaled = 2526.3g
-4. Do not mark complete until verified
+3. Sanity check: DDT 78°F, Flour 68°F, Ambient 70°F, Levain 70°F, Hand → Water Temp = (78×4) - 68 - 70 - 70 - 0 = 104°F
+4. Verify levain syncs to ambient until manually overridden, and reset link re-syncs
+5. Do not mark complete until verified
