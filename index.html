@@ -169,6 +169,7 @@
       padding: 14px 16px;
       margin-bottom: 16px;
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       gap: 10px;
       cursor: pointer;
@@ -529,6 +530,29 @@
       align-items: flex-start;
       gap: 8px;
     }
+
+    /* Levain ratio inputs */
+    .ratio-inputs {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .ratio-inputs input[type="number"] {
+      width: 52px;
+      padding: 10px 6px;
+      text-align: center;
+    }
+    .ratio-sep {
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .levain-hyd-readout {
+      margin: -4px 0 12px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--accent);
+      text-align: right;
+    }
   </style>
 </head>
 <body>
@@ -543,6 +567,8 @@
     <span id="banner-hydration">72%</span>
     <span class="banner-sep">|</span>
     <span id="banner-loss">75g loss</span>
+    <span class="banner-sep">|</span>
+    <span id="banner-levain">100% levain</span>
     <span id="banner-chevron">▼</span>
   </div>
 
@@ -586,10 +612,26 @@
             <input type="number" id="salt" value="2" min="0" max="100" step="0.1">
             <span class="unit">%</span>
           </div>
+          <div class="field levain-ratio-field">
+            <label>Levain Ratio</label>
+            <div class="ratio-inputs">
+              <input type="number" id="levain_seed" value="1" min="0" step="0.1" aria-label="Seed parts">
+              <span class="ratio-sep">:</span>
+              <input type="number" id="levain_flour" value="5" min="0" step="0.1" aria-label="Flour parts">
+              <span class="ratio-sep">:</span>
+              <input type="number" id="levain_water" value="5" min="0" step="0.1" aria-label="Water parts">
+            </div>
+          </div>
+          <p class="levain-hyd-readout">Levain hydration: <span id="levain-hyd-val">—</span></p>
           <div class="field">
-            <label for="starter_hydration">Starter Hydration</label>
-            <input type="number" id="starter_hydration" value="50" min="0" max="100" step="0.1">
+            <label for="mother_hydration">Mother Hydration</label>
+            <input type="number" id="mother_hydration" value="100" min="0" step="0.1">
             <span class="unit">%</span>
+          </div>
+          <div class="field">
+            <label for="levain_loss">Levain Build Loss</label>
+            <input type="number" id="levain_loss" value="15" min="0" step="1">
+            <span class="unit">g</span>
           </div>
         </div>
       </div>
@@ -656,6 +698,22 @@
         <div class="result-row"><span>Prefermented Flour (Fp)</span><span class="bp"><span id="out_Fp_bp">—</span></span><span class="val"><span id="out_Fp">—</span> g</span></div>
         <div class="result-row"><span>Levain Water (Wl)</span><span class="bp"><span id="out_Wl_bp">—</span></span><span class="val"><span id="out_Wl">—</span> g</span></div>
         <div class="result-row"><span>Batch Flour (Fb)</span><span class="bp"><span id="out_Fb_bp">—</span></span><span class="val"><span id="out_Fb">—</span> g</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Levain Build (collapsible, closed by default) -->
+  <section class="collapsible-section" id="levain-build-section">
+    <div class="section-header" id="levain-build-toggle">
+      <span class="section-chevron">▶</span>
+      <span class="section-title">Levain Build</span>
+    </div>
+    <div class="section-body">
+      <div class="section-inner">
+        <div class="result-row"><span>Seed</span><span class="val"><span id="out_build_seed">—</span> g</span></div>
+        <div class="result-row"><span>Flour</span><span class="val"><span id="out_build_flour">—</span> g</span></div>
+        <div class="result-row"><span>Water</span><span class="val"><span id="out_build_water">—</span> g</span></div>
+        <div class="result-row" style="font-weight:700;border-top:1px solid var(--border);margin-top:4px;padding-top:8px"><span>Total</span><span class="val"><span id="out_build_total">—</span> g</span></div>
       </div>
     </div>
   </section>
@@ -764,7 +822,19 @@
     const hydration         = pct('hydration');
     const inoculation       = pct('inoculation');
     const salt              = pct('salt');
-    const starter_hydration = pct('starter_hydration');
+
+    // Levain ratio (seed : flour : water) and mother/seed hydration
+    const rSeed  = num('levain_seed');
+    const rFlour = num('levain_flour');
+    const rWater = num('levain_water');
+    const motherHyd = pct('mother_hydration');
+
+    // True levain hydration, accounting for the flour/water carried in by the seed
+    const seedFlourParts = rSeed / (1 + motherHyd);
+    const seedWaterParts = rSeed * motherHyd / (1 + motherHyd);
+    const levainFlourParts = seedFlourParts + rFlour;
+    const levainWaterParts = seedWaterParts + rWater;
+    const levainHyd = levainFlourParts > 0 ? levainWaterParts / levainFlourParts : 0;
 
     const loss_g   = num('batch_loss');
     const B_target = num_loaves * loaf_size;
@@ -773,16 +843,45 @@
     const W  = F * hydration;
     const S  = F * salt;
     const Fp = F * inoculation;
-    const Wl = Fp * starter_hydration;
+    const Wl = Fp * levainHyd;
     const L  = Fp + Wl;
     const Fb = F - Fp;
     const Wb = W - Wl;
+
+    // Levain build: scale the ratio to (levain needed + build loss), then round the
+    // smallest component up to a 5g multiple and follow the ratio for the other two.
+    const levainBuildLoss = num('levain_loss');
+    const buildTarget = L + levainBuildLoss;
+    const ratioSum = rSeed + rFlour + rWater;
+    const nonzeroParts = [rSeed, rFlour, rWater].filter(p => p > 0);
+    let buildSeed = 0, buildFlour = 0, buildWater = 0;
+    if (ratioSum > 0 && buildTarget > 0 && nonzeroParts.length > 0) {
+      const smallestPart = Math.min(...nonzeroParts);
+      const rawSmallest  = (buildTarget / ratioSum) * smallestPart;
+      const roundedSmallest = Math.max(5, Math.ceil(rawSmallest / 5) * 5);
+      const k = roundedSmallest / smallestPart; // scale so the smallest lands on its 5g multiple
+      buildSeed  = rSeed  * k;
+      buildFlour = rFlour * k;
+      buildWater = rWater * k;
+    }
+    const dSeed  = Math.round(buildSeed);
+    const dFlour = Math.round(buildFlour);
+    const dWater = Math.round(buildWater);
+    const dBuildTotal = dSeed + dFlour + dWater;
 
     // Banner
     document.getElementById('banner-loaves').textContent    = `${num_loaves} × ${loaf_size}g`;
     document.getElementById('banner-total').textContent     = `${B_target.toFixed(0)}g`;
     document.getElementById('banner-hydration').textContent = `${num('hydration')}%`;
     document.getElementById('banner-loss').textContent      = `${num('batch_loss')}g loss`;
+    document.getElementById('banner-levain').textContent    = `${Math.round(levainHyd * 100)}% levain`;
+
+    // Levain hydration readout + build panel
+    document.getElementById('levain-hyd-val').textContent   = `${(levainHyd * 100).toFixed(1)}%`;
+    document.getElementById('out_build_seed').textContent   = dSeed;
+    document.getElementById('out_build_flour').textContent  = dFlour;
+    document.getElementById('out_build_water').textContent  = dWater;
+    document.getElementById('out_build_total').textContent  = dBuildTotal;
 
     // Primary results
     document.getElementById('out_L').textContent        = Math.round(L);
@@ -867,6 +966,10 @@
     document.getElementById('details-section').classList.toggle('open');
   });
 
+  document.getElementById('levain-build-toggle').addEventListener('click', () => {
+    document.getElementById('levain-build-section').classList.toggle('open');
+  });
+
   // --- localStorage ---
 
   function getRecipes() {
@@ -887,7 +990,11 @@
         hydration:         getInput('hydration'),
         inoculation:       getInput('inoculation'),
         salt:              getInput('salt'),
-        starter_hydration: getInput('starter_hydration'),
+        levain_seed:       getInput('levain_seed'),
+        levain_flour:      getInput('levain_flour'),
+        levain_water:      getInput('levain_water'),
+        mother_hydration:  getInput('mother_hydration'),
+        levain_loss:       getInput('levain_loss'),
       },
       flourBill: getFlourRows().map(r => ({ name: r.name, pct: r.pctRaw })),
     };
@@ -895,7 +1002,7 @@
 
   function loadRecipe(recipe) {
     const inp = recipe.inputs;
-    ['num_loaves','loaf_size','batch_loss','hydration','inoculation','salt','starter_hydration'].forEach(id => {
+    ['num_loaves','loaf_size','batch_loss','hydration','inoculation','salt','levain_seed','levain_flour','levain_water','mother_hydration','levain_loss'].forEach(id => {
       if (inp[id] !== undefined) document.getElementById(id).value = inp[id];
     });
     flourBillEl.innerHTML = '';
