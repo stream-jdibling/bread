@@ -553,6 +553,138 @@
       color: var(--accent);
       text-align: right;
     }
+
+    /* Bake Sheet inputs */
+    .mix-steps-header {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin: 16px 0 8px;
+    }
+    .mix-step-row {
+      display: grid;
+      grid-template-columns: 1fr 84px 28px;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .mix-step-row input { width: 100% !important; }
+    .mix-step-row .mix-min-wrap {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .mix-step-row .mix-min-wrap input { width: 100% !important; }
+    .mix-step-row .mix-unit { font-size: 0.85rem; color: var(--muted); }
+    .mix-step-row .btn-remove {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 1rem;
+      cursor: pointer;
+      padding: 0;
+    }
+    #btn-add-mix-step {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 16px;
+      background: var(--accent-light);
+      color: var(--accent);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      min-height: var(--min-tap);
+    }
+    #btn-add-mix-step:hover { background: #e8dcc8; }
+    #btn-print-sheet {
+      width: 100%;
+      margin-top: 16px;
+      padding: 12px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      min-height: var(--min-tap);
+    }
+    #btn-print-sheet:hover { background: #4a3820; }
+
+    /* Bake Sheet printout — hidden on screen, revealed for print */
+    #bake-sheet { display: none; }
+
+    @media print {
+      main { display: none !important; }
+      #bake-sheet {
+        display: block !important;
+        color: #000;
+        font-size: 11pt;
+      }
+      @page { margin: 1.2cm; }
+    }
+
+    #bake-sheet .bs-header {
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+      border-bottom: 2px solid #000;
+      padding-bottom: 6px;
+      margin-bottom: 12px;
+    }
+    #bake-sheet .bs-date { font-weight: 700; }
+    #bake-sheet .bs-title {
+      font-weight: 800;
+      font-size: 1.5em;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    #bake-sheet .bs-yield { font-weight: 600; }
+    #bake-sheet .bs-note { margin-left: auto; font-style: italic; }
+
+    #bake-sheet .bs-row {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    #bake-sheet .bs-row-top { grid-template-columns: 1fr 1fr 1fr; }
+    #bake-sheet .bs-row-bottom { grid-template-columns: 1.4fr 1fr; }
+
+    #bake-sheet .bs-box {
+      border: 1.5px solid #000;
+      border-radius: 4px;
+      padding: 8px 12px;
+    }
+    #bake-sheet .bs-box-title {
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border-bottom: 1px solid #000;
+      padding-bottom: 4px;
+      margin-bottom: 6px;
+    }
+    #bake-sheet .bs-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 2px 0;
+      font-variant-numeric: tabular-nums;
+    }
+    #bake-sheet .bs-line span:last-child { font-weight: 600; }
+    #bake-sheet .bs-line.bs-strong { font-weight: 800; }
+    #bake-sheet .bs-line.bs-strong span:last-child { font-weight: 800; }
+    #bake-sheet .bs-hr {
+      border: none;
+      border-top: 1px solid #000;
+      margin: 4px 0;
+    }
   </style>
 </head>
 <body>
@@ -718,6 +850,35 @@
     </div>
   </section>
 
+  <!-- Bake Sheet inputs (collapsible, closed by default) -->
+  <section class="collapsible-section" id="bake-sheet-section">
+    <div class="section-header" id="bake-sheet-toggle">
+      <span class="section-chevron">▶</span>
+      <span class="section-title">Bake Sheet</span>
+    </div>
+    <div class="section-body">
+      <div class="section-inner" id="bake-sheet-inputs">
+        <div class="field">
+          <label for="recipe_name">Recipe Name</label>
+          <input type="text" id="recipe_name" value="Country" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="bake_note">Note</label>
+          <input type="text" id="bake_note" value="" placeholder="e.g. Wed Market" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="max_per_batch">Max Dough / Batch</label>
+          <input type="number" id="max_per_batch" value="2500" min="1" step="1">
+          <span class="unit">g</span>
+        </div>
+        <div class="mix-steps-header">Mix Steps</div>
+        <div id="mix-steps"></div>
+        <button type="button" id="btn-add-mix-step">+ Add Step</button>
+        <button type="button" id="btn-print-sheet">🖨 Print Bake Sheet</button>
+      </div>
+    </div>
+  </section>
+
   <!-- Recipes -->
   <section id="recipes-section">
     <details>
@@ -775,6 +936,62 @@
 
 </main>
 
+<!-- Bake Sheet printout (hidden on screen, shown only when printing) -->
+<div id="bake-sheet">
+  <div class="bs-header">
+    <span class="bs-date" id="bs-date">—</span>
+    <span class="bs-title" id="bs-title">—</span>
+    <span class="bs-yield" id="bs-yield">—</span>
+    <span class="bs-note" id="bs-note"></span>
+  </div>
+
+  <div class="bs-row bs-row-top">
+    <div class="bs-box">
+      <div class="bs-box-title">Parameters</div>
+      <div class="bs-line"><span>Yield</span><span id="bs-yield2">—</span></div>
+      <div class="bs-line"><span>Hyd</span><span id="bs-hyd">—</span></div>
+      <div class="bs-line"><span>Inoc</span><span id="bs-inoc">—</span></div>
+      <div class="bs-line"><span>Salt</span><span id="bs-salt">—</span></div>
+      <div class="bs-line"><span>Levain</span><span id="bs-levain">—</span></div>
+    </div>
+    <div class="bs-box">
+      <div class="bs-box-title">Flour Bill</div>
+      <div id="bs-flourbill"></div>
+    </div>
+    <div class="bs-box">
+      <div class="bs-box-title">Levain Build</div>
+      <div class="bs-line"><span>Ratio</span><span id="bs-ratio">—</span></div>
+      <div class="bs-line bs-strong"><span>Total</span><span id="bs-build-total">—</span></div>
+      <hr class="bs-hr">
+      <div class="bs-line"><span>Seed</span><span id="bs-seed">—</span></div>
+      <div class="bs-line"><span>Flour</span><span id="bs-lflour">—</span></div>
+      <div class="bs-line"><span>Water</span><span id="bs-lwater">—</span></div>
+    </div>
+  </div>
+
+  <div class="bs-row bs-row-bottom">
+    <div class="bs-box bs-formula">
+      <div class="bs-box-title">Formula</div>
+      <div id="bs-formula-flours"></div>
+      <hr class="bs-hr">
+      <div class="bs-line bs-strong"><span>TTL Flour</span><span id="bs-ttl-flour">—</span></div>
+      <div class="bs-line"><span>Water</span><span id="bs-water">—</span></div>
+      <div class="bs-line"><span>Levain</span><span id="bs-lev-total">—</span></div>
+      <div class="bs-line"><span>Salt</span><span id="bs-salt-g">—</span></div>
+      <hr class="bs-hr">
+      <div class="bs-line bs-strong"><span>TOTAL</span><span id="bs-total">—</span></div>
+      <div class="bs-line bs-strong"><span>Dough</span><span id="bs-dough">—</span></div>
+    </div>
+    <div class="bs-box bs-batches">
+      <div class="bs-box-title" id="bs-batches-title">Batches</div>
+      <div class="bs-line bs-strong"><span>Dough</span><span id="bs-batch-dough">—</span></div>
+      <div class="bs-line bs-strong"><span>Levain</span><span id="bs-batch-levain">—</span></div>
+      <hr class="bs-hr">
+      <div id="bs-mix-steps"></div>
+    </div>
+  </div>
+</div>
+
 <!-- Flour row template -->
 <template id="flour-row-template">
   <div class="flour-row">
@@ -790,6 +1007,30 @@
   const primaryResultsEl = document.getElementById('primary-results');
   const primaryFlourRows = document.getElementById('primary-flour-rows');
   const recipeList = document.getElementById('recipe-list');
+  const mixStepsEl = document.getElementById('mix-steps');
+
+  function addMixStep(label = '', min = '') {
+    const row = document.createElement('div');
+    row.className = 'mix-step-row';
+    row.innerHTML =
+      '<input type="text" class="mix-label" placeholder="e.g. Spd 1" autocomplete="off">' +
+      '<div class="mix-min-wrap"><input type="number" class="mix-min" min="0" step="0.5"><span class="mix-unit">min</span></div>' +
+      '<button type="button" class="btn-remove" aria-label="Remove">✕</button>';
+    row.querySelector('.mix-label').value = label;
+    row.querySelector('.mix-min').value = min;
+    row.querySelector('.btn-remove').addEventListener('click', () => { row.remove(); recalculate(); });
+    mixStepsEl.appendChild(row);
+  }
+
+  function getMixSteps() {
+    return Array.from(mixStepsEl.querySelectorAll('.mix-step-row')).map(row => {
+      const m = parseFloat(row.querySelector('.mix-min').value);
+      return {
+        label: row.querySelector('.mix-label').value || 'Mix',
+        min: isNaN(m) ? 0 : m,
+      };
+    });
+  }
 
   function getInput(id) {
     return document.getElementById(id).value;
@@ -921,6 +1162,54 @@
       div.innerHTML = `<span class="primary-label flour-name">${r.name}</span><span class="primary-val">${Math.round(grams)} g</span>`;
       primaryFlourRows.appendChild(div);
     });
+
+    // --- Bake Sheet printout ---
+    const bsSet = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    const dough = B_scaled - L;                       // base dough, excludes levain
+    const maxPerBatch = num('max_per_batch');
+    const nBatches = maxPerBatch > 0 ? Math.max(1, Math.ceil(B_scaled / maxPerBatch)) : 1;
+
+    // Header
+    const now = new Date();
+    bsSet('bs-date', `${now.getMonth() + 1}/${now.getDate()}`);
+    bsSet('bs-title', getInput('recipe_name') || '—');
+    bsSet('bs-yield', `${loaf_size} × ${num_loaves}`);
+    bsSet('bs-note', getInput('bake_note') || '');
+
+    // Parameters box
+    bsSet('bs-yield2', `${num_loaves} × ${loaf_size}g`);
+    bsSet('bs-hyd', `${num('hydration')}%`);
+    bsSet('bs-inoc', `${num('inoculation')}%`);
+    bsSet('bs-salt', `${num('salt')}%`);
+    bsSet('bs-levain', `${Math.round(levainHyd * 100)}%`);
+
+    // Flour Bill box
+    document.getElementById('bs-flourbill').innerHTML = flour_bill.map(r =>
+      `<div class="bs-line"><span>${r.name}</span><span>${r.pctRaw}</span></div>`).join('');
+
+    // Levain Build box
+    bsSet('bs-ratio', `${num('levain_seed')}:${num('levain_flour')}:${num('levain_water')}`);
+    bsSet('bs-build-total', `${dBuildTotal} g`);
+    bsSet('bs-seed', `${dSeed} g`);
+    bsSet('bs-lflour', `${dFlour} g`);
+    bsSet('bs-lwater', `${dWater} g`);
+
+    // Formula box
+    document.getElementById('bs-formula-flours').innerHTML = flour_bill.map(r =>
+      `<div class="bs-line"><span>${r.name}</span><span>${Math.round(r.pct * Fb)}</span></div>`).join('');
+    bsSet('bs-ttl-flour', Math.round(Fb));
+    bsSet('bs-water', Math.round(Wb));
+    bsSet('bs-lev-total', Math.round(L));
+    bsSet('bs-salt-g', Math.round(S));
+    bsSet('bs-total', Math.round(B_scaled));
+    bsSet('bs-dough', Math.round(dough));
+
+    // Batches box
+    bsSet('bs-batches-title', `${nBatches} Batch${nBatches === 1 ? '' : 'es'}`);
+    bsSet('bs-batch-dough', `${Math.round(dough / nBatches)} g`);
+    bsSet('bs-batch-levain', `${Math.round(L / nBatches)} g`);
+    document.getElementById('bs-mix-steps').innerHTML = getMixSteps().map(s =>
+      `<div class="bs-line"><span>${s.label}</span><span>${s.min}m</span></div>`).join('');
   }
 
   function addFlourRow(name = '', pctVal = '') {
@@ -970,6 +1259,18 @@
     document.getElementById('levain-build-section').classList.toggle('open');
   });
 
+  document.getElementById('bake-sheet-toggle').addEventListener('click', () => {
+    document.getElementById('bake-sheet-section').classList.toggle('open');
+  });
+
+  // Bake sheet inputs live outside <form>, so wire their own listener
+  document.getElementById('bake-sheet-inputs').addEventListener('input', recalculate);
+  document.getElementById('btn-add-mix-step').addEventListener('click', () => {
+    addMixStep('', '');
+    recalculate();
+  });
+  document.getElementById('btn-print-sheet').addEventListener('click', () => window.print());
+
   // --- localStorage ---
 
   function getRecipes() {
@@ -995,20 +1296,27 @@
         levain_water:      getInput('levain_water'),
         mother_hydration:  getInput('mother_hydration'),
         levain_loss:       getInput('levain_loss'),
+        recipe_name:       getInput('recipe_name'),
+        bake_note:         getInput('bake_note'),
+        max_per_batch:     getInput('max_per_batch'),
       },
       flourBill: getFlourRows().map(r => ({ name: r.name, pct: r.pctRaw })),
+      mixSteps: getMixSteps(),
     };
   }
 
   function loadRecipe(recipe) {
     const inp = recipe.inputs;
-    ['num_loaves','loaf_size','batch_loss','hydration','inoculation','salt','levain_seed','levain_flour','levain_water','mother_hydration','levain_loss'].forEach(id => {
+    ['num_loaves','loaf_size','batch_loss','hydration','inoculation','salt','levain_seed','levain_flour','levain_water','mother_hydration','levain_loss','recipe_name','bake_note','max_per_batch'].forEach(id => {
       if (inp[id] !== undefined) document.getElementById(id).value = inp[id];
     });
     flourBillEl.innerHTML = '';
     (recipe.flourBill || []).forEach(r => addFlourRow(r.name, r.pct));
     if (flourBillEl.querySelectorAll('.flour-row').length === 0) addFlourRow('Flour', 100);
     updateRemoveButtons();
+    mixStepsEl.innerHTML = '';
+    (recipe.mixSteps || []).forEach(s => addMixStep(s.label, s.min));
+    if (mixStepsEl.querySelectorAll('.mix-step-row').length === 0) { addMixStep('Spd 1', 3); addMixStep('Spd 2', 3); }
     recalculate();
   }
 
@@ -1066,6 +1374,8 @@
 
   // Init
   addFlourRow('Flour', 100);
+  addMixStep('Spd 1', 3);
+  addMixStep('Spd 2', 3);
   renderRecipes();
   recalculate();
 
