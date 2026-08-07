@@ -56,9 +56,10 @@ round it UP to nearest 5g (min 5); rescale the other two by the same factor (rat
 **Bake-sheet batches**:
 
 ```
-dough    = B_scaled − L                    // base dough excluding levain
+dough    = B_scaled − L − (salt_in_mix ? S : 0)  // base dough excluding levain; salt excluded
+                                                 // when weighed separately per batch at mix
 nBatches = ceil(B_scaled / max_per_batch)  // capacity = FULL dough incl. levain; min 1
-per batch:  dough/nBatches  and  L/nBatches
+per batch:  dough/nBatches  and  L/nBatches  (and S/nBatches when salt_in_mix)
 ```
 
 **Baker's % (Details panel)**: everything relative to `F`: `bp(v) = v/F × 100`.
@@ -72,8 +73,8 @@ per batch:  dough/nBatches  and  L/nBatches
 - **`#primary-results`** — always visible: LEVAIN, WATER, per-flour rows, SALT, TOTAL (scaled), TOTAL (target). Dims (`.dimmed`) when the flour bill doesn't sum to 100%.
 - **Details** (collapsible) — F, W, Fp, Wl, Fb with baker's %.
 - **Levain Build** (collapsible) — seed/flour/water/total grams.
-- **Bake Sheet** (collapsible) — inputs: `recipe_name`, `bake_note`, `max_per_batch`, a dynamic **mix-steps** editor, and a **Print** button. ⚠️ **This section is OUTSIDE `#form`**, so it has its **own** `#bake-sheet-inputs` input listener. Any new input added outside the form needs the same treatment.
-- **Recipes** (`<details>`) — save (prompts for name) / load / delete from localStorage.
+- **Bake Sheet** (collapsible) — inputs: `recipe_name`, `bake_note`, `max_per_batch`, a **`salt_in_mix`** checkbox ("Add Salt During Mix"), a dynamic **mix-steps** editor, and a **Print** button. ⚠️ **This section is OUTSIDE `#form`**, so it has its **own** `#bake-sheet-inputs` input listener. Any new input added outside the form needs the same treatment. When `salt_in_mix` is checked, the printout's Parameters box tags salt with "(mix)" and the Batches box gains a per-batch **Salt** line (`S / nBatches`, from the total-recipe salt `S = F × salt`).
+- **Recipes** (`<details>`) — save (prompts for name, prefilled from `recipe_name`) / load / update / delete from localStorage. `loadedRecipeIndex` (module-level, null unless a recipe was loaded or just saved) tracks which saved recipe is loaded: the loaded item is highlighted (`.recipe-item.loaded`), a **"Save Changes to “name”"** button (`#btn-update-recipe`) overwrites that entry in place (keeping its save-time name), and the save button flips to secondary-styled **"Save as New Recipe"**. Deleting adjusts/clears `loadedRecipeIndex`.
 - **Water Temperature** (collapsible) — the separate module.
 - **`#bake-sheet`** — the print layout, `display:none` on screen; `@media print` hides `main` and reveals only this. Populated inside `recalculate()`. Matches the journal: header (date·name·yield·note), top row (Parameters / Flour Bill / Levain Build), bottom row (Formula / Batches with mix steps).
 
@@ -86,7 +87,8 @@ Collapsible pattern: `.collapsible-section` + toggling `.open` on header click.
 ```js
 { name, inputs: { num_loaves, loaf_size, batch_loss, hydration, inoculation, salt,
                   levain_seed, levain_flour, levain_water, mother_hydration, levain_loss,
-                  recipe_name, bake_note, max_per_batch },
+                  recipe_name, bake_note, max_per_batch,
+                  salt_in_mix },   // boolean (checkbox), unlike the other string values
   flourBill: [{ name, pct }],
   mixSteps:  [{ label, min }] }
 ```

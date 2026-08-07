@@ -85,6 +85,13 @@
     input::-webkit-outer-spin-button,
     input::-webkit-inner-spin-button { -webkit-appearance: none; }
 
+    .field input[type="checkbox"] {
+      width: 24px;
+      height: 24px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
     .unit {
       font-size: 0.85rem;
       color: var(--muted);
@@ -352,7 +359,8 @@
 
     details[open] summary { margin-bottom: 14px; }
 
-    #btn-save-recipe {
+    #btn-save-recipe,
+    #btn-update-recipe {
       width: 100%;
       padding: 12px;
       background: var(--accent);
@@ -367,7 +375,18 @@
       margin-bottom: 12px;
     }
 
-    #btn-save-recipe:hover { background: #4a3820; }
+    #btn-save-recipe:hover,
+    #btn-update-recipe:hover { background: #4a3820; }
+
+    #btn-update-recipe[hidden] { display: none; }
+
+    #btn-save-recipe.secondary {
+      background: var(--accent-light);
+      color: var(--accent);
+      border: 1px solid var(--border);
+    }
+
+    #btn-save-recipe.secondary:hover { background: #e8dcc8; }
 
     #recipe-list {
       display: flex;
@@ -395,6 +414,13 @@
     }
 
     .recipe-name:hover { color: var(--accent); }
+
+    .recipe-item.loaded {
+      border-color: var(--accent);
+      background: var(--accent-light);
+    }
+
+    .recipe-item.loaded .recipe-name { font-weight: 700; }
 
     .btn-delete-recipe {
       display: flex;
@@ -871,6 +897,10 @@
           <input type="number" id="max_per_batch" value="2500" min="1" step="1">
           <span class="unit">g</span>
         </div>
+        <div class="field">
+          <label for="salt_in_mix">Add Salt During Mix</label>
+          <input type="checkbox" id="salt_in_mix">
+        </div>
         <div class="mix-steps-header">Mix Steps</div>
         <div id="mix-steps"></div>
         <button type="button" id="btn-add-mix-step">+ Add Step</button>
@@ -883,6 +913,7 @@
   <section id="recipes-section">
     <details>
       <summary>Recipes</summary>
+      <button type="button" id="btn-update-recipe" hidden>Save Changes</button>
       <button type="button" id="btn-save-recipe">Save Current Recipe</button>
       <div id="recipe-list"></div>
     </details>
@@ -986,6 +1017,7 @@
       <div class="bs-box-title" id="bs-batches-title">Batches</div>
       <div class="bs-line bs-strong"><span>Dough</span><span id="bs-batch-dough">—</span></div>
       <div class="bs-line bs-strong"><span>Levain</span><span id="bs-batch-levain">—</span></div>
+      <div class="bs-line bs-strong" id="bs-batch-salt-row" style="display:none"><span>Salt</span><span id="bs-batch-salt">—</span></div>
       <hr class="bs-hr">
       <div id="bs-mix-steps"></div>
     </div>
@@ -1165,7 +1197,9 @@
 
     // --- Bake Sheet printout ---
     const bsSet = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-    const dough = B_scaled - L;                       // base dough, excludes levain
+    const saltInMix = document.getElementById('salt_in_mix').checked;
+    // base dough, excludes levain; salt weighed separately per batch when it's added at mix
+    const dough = B_scaled - L - (saltInMix ? S : 0);
     const maxPerBatch = num('max_per_batch');
     const nBatches = maxPerBatch > 0 ? Math.max(1, Math.ceil(B_scaled / maxPerBatch)) : 1;
 
@@ -1180,7 +1214,7 @@
     bsSet('bs-yield2', `${num_loaves} × ${loaf_size}g`);
     bsSet('bs-hyd', `${num('hydration')}%`);
     bsSet('bs-inoc', `${num('inoculation')}%`);
-    bsSet('bs-salt', `${num('salt')}%`);
+    bsSet('bs-salt', `${num('salt')}%${saltInMix ? ' (mix)' : ''}`);
     bsSet('bs-levain', `${Math.round(levainHyd * 100)}%`);
 
     // Flour Bill box
@@ -1208,6 +1242,8 @@
     bsSet('bs-batches-title', `${nBatches} Batch${nBatches === 1 ? '' : 'es'}`);
     bsSet('bs-batch-dough', `${Math.round(dough / nBatches)} g`);
     bsSet('bs-batch-levain', `${Math.round(L / nBatches)} g`);
+    document.getElementById('bs-batch-salt-row').style.display = saltInMix ? '' : 'none';
+    bsSet('bs-batch-salt', `${Math.round(S / nBatches)} g`);
     document.getElementById('bs-mix-steps').innerHTML = getMixSteps().map(s =>
       `<div class="bs-line"><span>${s.label}</span><span>${s.min}m</span></div>`).join('');
   }
@@ -1299,17 +1335,19 @@
         recipe_name:       getInput('recipe_name'),
         bake_note:         getInput('bake_note'),
         max_per_batch:     getInput('max_per_batch'),
+        salt_in_mix:       document.getElementById('salt_in_mix').checked,
       },
       flourBill: getFlourRows().map(r => ({ name: r.name, pct: r.pctRaw })),
       mixSteps: getMixSteps(),
     };
   }
 
-  function loadRecipe(recipe) {
+  function loadRecipe(recipe, index = null) {
     const inp = recipe.inputs;
     ['num_loaves','loaf_size','batch_loss','hydration','inoculation','salt','levain_seed','levain_flour','levain_water','mother_hydration','levain_loss','recipe_name','bake_note','max_per_batch'].forEach(id => {
       if (inp[id] !== undefined) document.getElementById(id).value = inp[id];
     });
+    document.getElementById('salt_in_mix').checked = !!inp.salt_in_mix;
     flourBillEl.innerHTML = '';
     (recipe.flourBill || []).forEach(r => addFlourRow(r.name, r.pct));
     if (flourBillEl.querySelectorAll('.flour-row').length === 0) addFlourRow('Flour', 100);
@@ -1317,7 +1355,24 @@
     mixStepsEl.innerHTML = '';
     (recipe.mixSteps || []).forEach(s => addMixStep(s.label, s.min));
     if (mixStepsEl.querySelectorAll('.mix-step-row').length === 0) { addMixStep('Spd 1', 3); addMixStep('Spd 2', 3); }
+    loadedRecipeIndex = index;
+    updateSaveButtons();
+    renderRecipes();
     recalculate();
+  }
+
+  // Which saved recipe is currently loaded (index into the recipes array), or null.
+  let loadedRecipeIndex = null;
+
+  function updateSaveButtons() {
+    const updateBtn = document.getElementById('btn-update-recipe');
+    const saveBtn = document.getElementById('btn-save-recipe');
+    const loaded = loadedRecipeIndex !== null ? getRecipes()[loadedRecipeIndex] : null;
+    if (!loaded) loadedRecipeIndex = null;
+    updateBtn.hidden = !loaded;
+    if (loaded) updateBtn.textContent = `Save Changes to “${loaded.name}”`;
+    saveBtn.textContent = loaded ? 'Save as New Recipe' : 'Save Current Recipe';
+    saveBtn.classList.toggle('secondary', !!loaded);
   }
 
   function renderRecipes() {
@@ -1330,11 +1385,12 @@
     recipes.forEach((recipe, i) => {
       const item = document.createElement('div');
       item.className = 'recipe-item';
+      if (i === loadedRecipeIndex) item.classList.add('loaded');
 
       const nameEl = document.createElement('span');
       nameEl.className = 'recipe-name';
       nameEl.textContent = recipe.name;
-      nameEl.addEventListener('click', () => loadRecipe(recipe));
+      nameEl.addEventListener('click', () => loadRecipe(recipe, i));
 
       const delBtn = document.createElement('button');
       delBtn.className = 'btn-delete-recipe';
@@ -1352,17 +1408,37 @@
     const recipes = getRecipes();
     recipes.splice(index, 1);
     saveRecipes(recipes);
+    if (loadedRecipeIndex !== null) {
+      if (index === loadedRecipeIndex) loadedRecipeIndex = null;
+      else if (index < loadedRecipeIndex) loadedRecipeIndex--;
+    }
+    updateSaveButtons();
     renderRecipes();
   }
 
   document.getElementById('btn-save-recipe').addEventListener('click', () => {
-    const name = prompt('Recipe name:');
+    const name = prompt('Recipe name:', getInput('recipe_name') || '');
     if (!name || !name.trim()) return;
     const recipes = getRecipes();
     recipes.push({ name: name.trim(), ...currentState() });
     saveRecipes(recipes);
+    loadedRecipeIndex = recipes.length - 1;
+    updateSaveButtons();
     renderRecipes();
     document.querySelector('#recipes-section details').open = true;
+  });
+
+  document.getElementById('btn-update-recipe').addEventListener('click', () => {
+    if (loadedRecipeIndex === null) return;
+    const recipes = getRecipes();
+    const existing = recipes[loadedRecipeIndex];
+    if (!existing) { loadedRecipeIndex = null; updateSaveButtons(); return; }
+    recipes[loadedRecipeIndex] = { name: existing.name, ...currentState() };
+    saveRecipes(recipes);
+    renderRecipes();
+    const btn = document.getElementById('btn-update-recipe');
+    btn.textContent = 'Saved ✓';
+    setTimeout(updateSaveButtons, 1200);
   });
 
   document.getElementById('btn-add-flour').addEventListener('click', () => {
